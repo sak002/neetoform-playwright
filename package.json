@@ -1,0 +1,12 @@
+{
+  "name": "neetoform-playwright-tests",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Samiksha <samikshadkamble@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.2"
+  },
+  "scripts": {}
+}

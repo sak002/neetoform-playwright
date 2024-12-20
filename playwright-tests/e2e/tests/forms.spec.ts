@@ -153,4 +153,63 @@ test.describe("Forms page", () => {
             await expect(newPage2.getByText(FORM_TEXTS.multipleChoiceQuestionText)).toBeVisible();
         })
     })
+
+    test("should be able to verify form insights", async ({ page }) => {
+        await test.step("Step 3: Publish the form", async () => {
+            await page.getByTestId('publish-button').click();
+        })
+
+        await test.step("Step 4: Go to the insights tab", async () => {
+            await page.getByRole('link', { name: 'Submissions' }).click();
+            await page.getByRole('link', { name: 'Insights' }).click();
+        })
+
+        await test.step("Step 5: Verify the visits, starts, submissions count and completion rate is 0", async () => {
+            await expect(page.getByTestId('visits-metric').getByTestId('insights-count')).toHaveText("0");
+            await expect(page.getByTestId('starts-metric').getByTestId('insights-count')).toHaveText("0");
+            await expect(page.getByTestId('submissions-metric').getByTestId('insights-count')).toHaveText("0");
+            await expect(page.getByTestId('completion-rate-metric').getByTestId('insights-count')).toHaveText("0%");
+        })
+
+        await test.step("Step 6: Go to the published page and verify the visits count", async () => {
+            [newPage] = await Promise.all([
+                page.waitForEvent('popup', { timeout: 20_000 }),
+                page.getByTestId('publish-preview-button').click()
+            ]);
+
+            await page.reload();
+            await expect(page.getByTestId('visits-metric').getByTestId('insights-count')).toHaveText("1", { timeout: 10_000 });
+        })
+
+        await test.step("Step 7: Go to the published form again and add a value to the field", async () => {
+            [newPage2] = await Promise.all([
+                page.waitForEvent('popup', { timeout: 20_000 }),
+                page.getByTestId('publish-preview-button').click()
+            ]);
+
+            await newPage2.getByRole('textbox').fill("oliver@example.com");
+        })
+
+        await test.step("Step 8: Verify the visits and starts count", async () => {
+            await page.reload();
+            await expect(page.getByTestId('visits-metric').getByTestId('insights-count')).toHaveText("2");
+            await expect(page.getByTestId('starts-metric').getByTestId('insights-count')).toHaveText("1");
+        })
+
+        await test.step("Step 9: Open the published form again and submit the form", async () => {
+            [newPage3] = await Promise.all([
+                page.waitForEvent('popup', { timeout: 20_000 }),
+                page.getByTestId('publish-preview-button').click()
+            ]);
+            await newPage3.getByRole('button', { name: 'Submit' }).click({ timeout: 10_000 });
+        })
+
+        await test.step("Step 10: Verify the visits, starts, submissions count and completion rate", async () => {
+            await page.reload();
+            await expect(page.getByTestId('visits-metric').getByTestId('insights-count')).toHaveText("3");
+            await expect(page.getByTestId('starts-metric').getByTestId('insights-count')).toHaveText("1");
+            await expect(page.getByTestId('submissions-metric').getByTestId('insights-count')).toHaveText("1", { timeout: 10_000 });
+            await expect(page.getByTestId('completion-rate-metric').getByTestId('insights-count')).toHaveText("100%");
+        })
+    })
 });

@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { faker } from "@faker-js/faker";
 import {
     LOGIN_SELECTORS,
     NAVBAR_SELECTORS,
@@ -10,7 +11,7 @@ import {
 import { FORM_TEXTS } from '../constants/texts';
 
 test.describe("Forms page", () => {
-    let newPage: Page, newPage2: Page, newPage3: Page;
+    let newPage: Page, newPage2: Page, newPage3: Page, formName: string;
     test.beforeEach(async ({ page }) => {
         await test.step("Step 1: Login to neetoform", async () => {
             await page.goto("/");
@@ -21,7 +22,20 @@ test.describe("Forms page", () => {
             await page.getByRole('button', { name: NAVBAR_SELECTORS.addFormButtonName }).click({ timeout: 20_000 });
             await page.getByText(NAVBAR_SELECTORS.startFromScratchLink).click();
         })
+
+        formName = faker.word.words({ count: 2 });
+        await page.getByTestId('nui-dropdown-icon').click({ timeout: 20_000});
+        await page.getByTestId('form-rename-button').click();
+        await page.getByTestId('form-rename-text-field').fill(formName);
     });
+
+    test.afterEach(async ({ page }) => {
+        await page.getByTestId('home-button').click();
+        await page.getByRole('cell', { name: formName }).getByTestId('more-actions-dropdown').click();
+        await page.getByRole('button', { name: 'Delete' }).click();
+        await page.getByTestId('delete-archive-alert-archive-checkbox').click();
+        await page.getByRole('button', { name: 'Delete' }).click();
+    })
 
     test("should be able to add a new form, submit it and verify submission", async ({ page }) => {
         await test.step("Step 3: Add form elements", async () => {
@@ -131,9 +145,7 @@ test.describe("Forms page", () => {
             const options = newPage.getByTestId(PUBLISHED_FORM_PAGE_SELECTORS.singleChoiceOptions);
             await expect(options).not.toHaveText(optionArray);
             const optionTexts = await options.allInnerTexts();
-            // console.log("Option texts", optionTexts);
             const sortedTexts = optionTexts.sort((a, b) => Number(a.split(" ")[1]) - Number(b.split(" ")[1]));
-            // console.log("sorted array", sortedTexts);
             expect(sortedTexts).toHaveLength(10);
             expect(sortedTexts).toEqual(optionArray);
         })
@@ -219,5 +231,9 @@ test.describe("Forms page", () => {
             await expect(page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.submissionsCountSection).getByTestId(SUBMISSIONS_PAGE_SELECTORS.insightsCount)).toHaveText("1", { timeout: 10_000 });
             await expect(page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.completionRateSection).getByTestId(SUBMISSIONS_PAGE_SELECTORS.insightsCount)).toHaveText("100%");
         })
+    })
+
+    test("dummy test", async () => {
+
     })
 });

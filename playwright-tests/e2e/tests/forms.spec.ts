@@ -1,10 +1,11 @@
 import { test, expect, Page } from '@playwright/test';
 import {
     LOGIN_SELECTORS,
-    NAVBAR_SELECTORS, 
-    CREATE_FORM_PAGE_SELECTORS, 
+    NAVBAR_SELECTORS,
+    CREATE_FORM_PAGE_SELECTORS,
     PUBLISHED_FORM_PAGE_SELECTORS,
-    THANK_YOU_PAGE_SELECTORS
+    THANK_YOU_PAGE_SELECTORS,
+    SUBMISSIONS_PAGE_SELECTORS,
 } from '../constants/selectors';
 import { FORM_TEXTS } from '../constants/texts';
 
@@ -68,7 +69,7 @@ test.describe("Forms page", () => {
         })
 
         await test.step("Step 8: Check if thank you page is visible", async () => {
-            await expect(newPage.getByRole('heading', { name: THANK_YOU_PAGE_SELECTORS.headingName1 })).toBeVisible({ timeout: 10_000});
+            await expect(newPage.getByRole('heading', { name: THANK_YOU_PAGE_SELECTORS.headingName1 })).toBeVisible({ timeout: 10_000 });
             await expect(newPage.getByRole('heading', { name: THANK_YOU_PAGE_SELECTORS.headingName2 })).toBeVisible();
             await expect(newPage.getByText(THANK_YOU_PAGE_SELECTORS.responseText)).toBeVisible();
         })
@@ -77,7 +78,7 @@ test.describe("Forms page", () => {
             await page.getByRole('link', { name: NAVBAR_SELECTORS.submissionLinkName }).click();
             await expect(page.getByRole('cell', { name: FORM_TEXTS.defaultEmail })).toBeVisible();
             await expect(page.getByRole('cell', { name: `${FORM_TEXTS.defaultFirstName} ${FORM_TEXTS.defaultLastName}` })).toBeVisible();
-            await expect(page.getByText(`${FORM_TEXTS.defaultCountryCode} ${FORM_TEXTS.defaultPhoneNumber.slice(0,3)} ${FORM_TEXTS.defaultPhoneNumber.slice(3,6)}`)).toBeVisible();
+            await expect(page.getByText(`${FORM_TEXTS.defaultCountryCode} ${FORM_TEXTS.defaultPhoneNumber.slice(0, 3)} ${FORM_TEXTS.defaultPhoneNumber.slice(3, 6)}`)).toBeVisible();
         })
     });
 
@@ -156,60 +157,67 @@ test.describe("Forms page", () => {
 
     test("should be able to verify form insights", async ({ page }) => {
         await test.step("Step 3: Publish the form", async () => {
-            await page.getByTestId('publish-button').click();
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishButton).click();
         })
 
         await test.step("Step 4: Go to the insights tab", async () => {
-            await page.getByRole('link', { name: 'Submissions' }).click();
-            await page.getByRole('link', { name: 'Insights' }).click();
+            await page.getByRole('link', { name: NAVBAR_SELECTORS.submissionLinkName }).click();
+            await page.getByRole('link', { name: SUBMISSIONS_PAGE_SELECTORS.insightsLinkName }).click();
         })
 
         await test.step("Step 5: Verify the visits, starts, submissions count and completion rate is 0", async () => {
-            await expect(page.getByTestId('visits-metric').getByTestId('insights-count')).toHaveText("0");
-            await expect(page.getByTestId('starts-metric').getByTestId('insights-count')).toHaveText("0");
-            await expect(page.getByTestId('submissions-metric').getByTestId('insights-count')).toHaveText("0");
-            await expect(page.getByTestId('completion-rate-metric').getByTestId('insights-count')).toHaveText("0%");
+            await expect(page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.visitsCountSection)
+                .getByTestId(SUBMISSIONS_PAGE_SELECTORS.insightsCount)).toHaveText("0");
+            await expect(page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.startsCountSection)
+                .getByTestId(SUBMISSIONS_PAGE_SELECTORS.insightsCount)).toHaveText("0");
+            await expect(page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.submissionsCountSection)
+                .getByTestId(SUBMISSIONS_PAGE_SELECTORS.insightsCount)).toHaveText("0");
+            await expect(page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.completionRateSection)
+                .getByTestId(SUBMISSIONS_PAGE_SELECTORS.insightsCount)).toHaveText("0%");
         })
 
         await test.step("Step 6: Go to the published page and verify the visits count", async () => {
             [newPage] = await Promise.all([
                 page.waitForEvent('popup', { timeout: 20_000 }),
-                page.getByTestId('publish-preview-button').click()
+                page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishPreviewButton).click()
             ]);
 
             await page.reload();
-            await expect(page.getByTestId('visits-metric').getByTestId('insights-count')).toHaveText("1", { timeout: 10_000 });
+            await expect(page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.visitsCountSection)
+                .getByTestId(SUBMISSIONS_PAGE_SELECTORS.insightsCount)).toHaveText("1", { timeout: 10_000 });
         })
 
         await test.step("Step 7: Go to the published form again and add a value to the field", async () => {
             [newPage2] = await Promise.all([
                 page.waitForEvent('popup', { timeout: 20_000 }),
-                page.getByTestId('publish-preview-button').click()
+                page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishPreviewButton).click()
             ]);
 
-            await newPage2.getByRole('textbox').fill("oliver@example.com");
+            await newPage2.getByRole('textbox').fill(FORM_TEXTS.defaultEmail);
         })
 
         await test.step("Step 8: Verify the visits and starts count", async () => {
             await page.reload();
-            await expect(page.getByTestId('visits-metric').getByTestId('insights-count')).toHaveText("2");
-            await expect(page.getByTestId('starts-metric').getByTestId('insights-count')).toHaveText("1");
+            await expect(page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.visitsCountSection)
+                .getByTestId(SUBMISSIONS_PAGE_SELECTORS.insightsCount)).toHaveText("2");
+            await expect(page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.startsCountSection)
+                .getByTestId(SUBMISSIONS_PAGE_SELECTORS.insightsCount)).toHaveText("1");
         })
 
         await test.step("Step 9: Open the published form again and submit the form", async () => {
             [newPage3] = await Promise.all([
                 page.waitForEvent('popup', { timeout: 20_000 }),
-                page.getByTestId('publish-preview-button').click()
+                page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishPreviewButton).click()
             ]);
-            await newPage3.getByRole('button', { name: 'Submit' }).click({ timeout: 10_000 });
+            await newPage3.getByRole('button', { name: PUBLISHED_FORM_PAGE_SELECTORS.submitButtonName }).click({ timeout: 10_000 });
         })
 
         await test.step("Step 10: Verify the visits, starts, submissions count and completion rate", async () => {
             await page.reload();
-            await expect(page.getByTestId('visits-metric').getByTestId('insights-count')).toHaveText("3");
-            await expect(page.getByTestId('starts-metric').getByTestId('insights-count')).toHaveText("1");
-            await expect(page.getByTestId('submissions-metric').getByTestId('insights-count')).toHaveText("1", { timeout: 10_000 });
-            await expect(page.getByTestId('completion-rate-metric').getByTestId('insights-count')).toHaveText("100%");
+            await expect(page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.visitsCountSection).getByTestId(SUBMISSIONS_PAGE_SELECTORS.insightsCount)).toHaveText("3");
+            await expect(page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.startsCountSection).getByTestId(SUBMISSIONS_PAGE_SELECTORS.insightsCount)).toHaveText("1");
+            await expect(page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.submissionsCountSection).getByTestId(SUBMISSIONS_PAGE_SELECTORS.insightsCount)).toHaveText("1", { timeout: 10_000 });
+            await expect(page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.completionRateSection).getByTestId(SUBMISSIONS_PAGE_SELECTORS.insightsCount)).toHaveText("100%");
         })
     })
 });

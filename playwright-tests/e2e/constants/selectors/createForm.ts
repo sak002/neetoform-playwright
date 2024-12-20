@@ -6,6 +6,10 @@ export const NAVBAR_SELECTORS = {
     addFormButtonName: 'Add new form',
     startFromScratchLink: 'Start from scratchA blank',
     submissionLinkName: 'Submissions',
+    dropdownMenuIcon: 'nui-dropdown-icon',
+    formRenameButton: 'form-rename-button',
+    formRenameField: 'form-rename-text-field',
+    homeButton: 'home-button',
 }
 
 export const CREATE_FORM_PAGE_SELECTORS = {
@@ -23,6 +27,5 @@ export const CREATE_FORM_PAGE_SELECTORS = {
     hideOptionButtonText: 'Hide question',
     publishButton: 'publish-button',
     publishPreviewButton: 'publish-preview-button',
-
 }
 

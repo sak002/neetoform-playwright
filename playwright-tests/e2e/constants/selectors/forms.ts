@@ -17,3 +17,8 @@ export const THANK_YOU_PAGE_SELECTORS = {
     headingName2: 'Thank You.',
     responseText: 'Your response has been',
 }
+
+export const FORM_TABLE_SELECTORS = {
+    moreActionsDropdownButton: 'more-actions-dropdown',
+    deleteButtonName: 'Delete',
+}

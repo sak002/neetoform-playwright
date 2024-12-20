@@ -7,6 +7,7 @@ import {
     PUBLISHED_FORM_PAGE_SELECTORS,
     THANK_YOU_PAGE_SELECTORS,
     SUBMISSIONS_PAGE_SELECTORS,
+    FORM_TABLE_SELECTORS
 } from '../constants/selectors';
 import { FORM_TEXTS } from '../constants/texts';
 
@@ -24,17 +25,16 @@ test.describe("Forms page", () => {
         })
 
         formName = faker.word.words({ count: 2 });
-        await page.getByTestId('nui-dropdown-icon').click({ timeout: 20_000});
-        await page.getByTestId('form-rename-button').click();
-        await page.getByTestId('form-rename-text-field').fill(formName);
+        await page.getByTestId('form-title').click();
+        await page.getByTestId(NAVBAR_SELECTORS.formRenameField).fill(formName);
     });
 
     test.afterEach(async ({ page }) => {
-        await page.getByTestId('home-button').click();
-        await page.getByRole('cell', { name: formName }).getByTestId('more-actions-dropdown').click();
-        await page.getByRole('button', { name: 'Delete' }).click();
+        await page.getByTestId(NAVBAR_SELECTORS.homeButton).click();
+        await page.getByRole('cell', { name: formName }).getByTestId(FORM_TABLE_SELECTORS.moreActionsDropdownButton).click({ timeout: 10_000 });
+        await page.getByRole('button', { name: FORM_TABLE_SELECTORS.deleteButtonName }).click();
         await page.getByTestId('delete-archive-alert-archive-checkbox').click();
-        await page.getByRole('button', { name: 'Delete' }).click();
+        await page.getByTestId('delete-archive-alert-delete-button').click();
     })
 
     test("should be able to add a new form, submit it and verify submission", async ({ page }) => {
@@ -231,9 +231,5 @@ test.describe("Forms page", () => {
             await expect(page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.submissionsCountSection).getByTestId(SUBMISSIONS_PAGE_SELECTORS.insightsCount)).toHaveText("1", { timeout: 10_000 });
             await expect(page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.completionRateSection).getByTestId(SUBMISSIONS_PAGE_SELECTORS.insightsCount)).toHaveText("100%");
         })
-    })
-
-    test("dummy test", async () => {
-
     })
 });

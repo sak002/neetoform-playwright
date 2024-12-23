@@ -6,8 +6,8 @@ interface Fixtures {
 };
 
 export const test = base.extend<Fixtures>({
-    formPage: async ({ page }, use) => {
-        const formPage = new FormPage(page);
+    formPage: async ({ page, context }, use) => {
+        const formPage = new FormPage(page, context);
         await use(formPage);
     },
 });

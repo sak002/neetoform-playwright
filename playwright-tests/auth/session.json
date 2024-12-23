@@ -1,0 +1,49 @@
+{
+  "cookies": [
+    {
+      "name": "__neetoform_session",
+      "value": "90dc38e9a450d978747114d092d32daa",
+      "domain": "neeto-form-web-playwright.neetodeployapp.com",
+      "path": "/",
+      "expires": 1742713537.296599,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "lang",
+      "value": "en-US",
+      "domain": "neeto-form-web-playwright.neetodeployapp.com",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Strict"
+    },
+    {
+      "name": "mp_TEST_TOKEN_mixpanel",
+      "value": "%7B%22distinct_id%22%3A%20%22%24device%3A193f255f511e54-04960c95b77cf4-1239307b-e1000-193f255f511e54%22%2C%22%24device_id%22%3A%20%22193f255f511e54-04960c95b77cf4-1239307b-e1000-193f255f511e54%22%2C%22%24initial_referrer%22%3A%20%22%24direct%22%2C%22%24initial_referring_domain%22%3A%20%22%24direct%22%2C%22__mps%22%3A%20%7B%7D%2C%22__mpso%22%3A%20%7B%22%24initial_referrer%22%3A%20%22%24direct%22%2C%22%24initial_referring_domain%22%3A%20%22%24direct%22%7D%2C%22__mpus%22%3A%20%7B%7D%2C%22__mpa%22%3A%20%7B%7D%2C%22__mpu%22%3A%20%7B%7D%2C%22__mpr%22%3A%20%5B%5D%2C%22__mpap%22%3A%20%5B%5D%7D",
+      "domain": ".neetodeployapp.com",
+      "path": "/",
+      "expires": 1766473539,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "https://neeto-form-web-playwright.neetodeployapp.com",
+      "localStorage": [
+        {
+          "name": "neeto-molecules-columns-order",
+          "value": "{\"state\":{},\"version\":0}"
+        },
+        {
+          "name": "neeto-molecules-hidden-columns",
+          "value": "{\"state\":{},\"version\":0}"
+        }
+      ]
+    }
+  ]
+}

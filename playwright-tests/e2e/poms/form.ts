@@ -22,4 +22,20 @@ export class FormPage {
         return formUrl;
     }
 
+
+    addStarRatingOpinionAndMatrixField = async () => {
+        await this.page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.starRatingButtonName }).click();
+        await this.page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.opinionScaleButtonName }).click();
+        await this.page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.matrixButtonName }).click();
+
+        await this.page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.questionElementButtonName }).nth(1).click();
+        await this.page.getByPlaceholder(CREATE_FORM_PAGE_SELECTORS.questionPlaceHolder).fill(CREATE_FORM_TEXTS.defaultStarRatingQuestion);
+
+        await this.page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.questionElementButtonName }).nth(2).click();
+        await this.page.getByPlaceholder(CREATE_FORM_PAGE_SELECTORS.questionPlaceHolder).fill(CREATE_FORM_TEXTS.defaultOpinionScaleQuestion);
+
+        await this.page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.questionElementButtonName }).nth(3).click();
+        await this.page.getByPlaceholder(CREATE_FORM_PAGE_SELECTORS.questionPlaceHolder).fill(CREATE_FORM_TEXTS.defaultMatrixQuestion);
+    }
+
 }

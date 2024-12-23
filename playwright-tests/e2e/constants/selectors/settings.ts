@@ -18,5 +18,7 @@ export const ADD_CONDITION_SELECTORS = {
     selectActionOptionText: '#react-select-4-option-0',
     selectFieldLocator: '.flex > div:nth-child(2) > .neeto-ui-react-select__container > .neeto-ui-react-select__control',
     selectFieldOptionText: 'Email address',
-    saveChangesButtonLocator: '[data-test-id="save-changes-button"]'
+    saveChangesButtonLocator: '[data-test-id="save-changes-button"]',
+    chooseConditionButtonName: 'Condition 1 If  Interested in',
+    conditionDisableButtonName: 'Disable',
 }

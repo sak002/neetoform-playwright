@@ -12,6 +12,8 @@ export const PUBLISHED_FORM_PAGE_SELECTORS = {
     passwordField: 'password-text-field',
     submitPasswordButton: 'continue-button',
     emailTextBox: 'textbox',
+    emailAddressQuestionLabel: 'Question 1Email address*',
+    
 
 }
 

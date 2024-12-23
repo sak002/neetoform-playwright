@@ -29,6 +29,7 @@ test.describe("Forms page", () => {
             await page.getByText(NAVBAR_SELECTORS.startFromScratchLink).click();
         })
 
+
         formName = faker.word.words({ count: 2 });
         await page.getByTestId('form-title').click();
         await page.getByTestId(NAVBAR_SELECTORS.formRenameField).fill(formName);
@@ -238,7 +239,7 @@ test.describe("Forms page", () => {
         })
     })
 
-    test("should be able to access control the form", async ({ page, context, browser }) => {
+    test("should be able to access control the form", async ({ page, context, browser, formPage }) => {
         let newUserContext: BrowserContext, newUserPage: Page;
         await test.step("Step 3: Publish the form", async () => {
             await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishButton).click();
@@ -256,12 +257,7 @@ test.describe("Forms page", () => {
         })
 
         await test.step("Step 6: Copy form link to clipboard and read it", async () => {
-            await page.getByRole('link', { name: NAVBAR_SELECTORS.shareLinkName }).click();
-
-            await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-            await page.getByTestId(SHARE_PAGE_SELECTORS.copyFormLinkButton).click();
-            formUrl = await page.evaluate(() => navigator.clipboard.readText());
-            console.log(formUrl);
+            formUrl = await formPage.copyFormLink();
         })
 
         await test.step("Step 7: Open form in a new page and access using password", async () => {
@@ -286,7 +282,168 @@ test.describe("Forms page", () => {
         })
     })
 
-   
+    test("should be able to make unique submissions", async ({ page, context, browser, formPage }) => {
+        await test.step("Step 3: Publish the form", async () => {
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishButton).click();
+        })
+
+        await test.step("Step 4: Go to prevent duplicate submissions card", async () => {
+            await page.getByRole('link', { name: NAVBAR_SELECTORS.settingsLinkName }).click();
+            await page
+                .getByRole('link', { name: SETTINGS_PAGE_SELECTORS.uniqueSubmissionCardName })
+                .click();
+        })
+
+        await test.step("Step 5: Select use cookies option and save it", async () => {
+            await page.getByText(SETTINGS_PAGE_SELECTORS.useCookiesOptionText).click();
+            await page.getByTestId(SETTINGS_PAGE_SELECTORS.saveChangesButton).click();
+        });
+
+        await test.step("Step 8: Open the form and submit it", async () => {
+            [newPage] = await Promise.all([
+                page.waitForEvent('popup', { timeout: 60_000 }),
+                page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishPreviewButton).click({ timeout: 10_000 })
+            ]);
+            await newPage.getByRole('textbox').fill(FORM_TEXTS.defaultEmail);
+            await newPage.getByRole('button', { name: PUBLISHED_FORM_PAGE_SELECTORS.submitButtonName }).click({ timeout: 10_000 });
+        })
+
+        await test.step("Step 6: Open the form again", async () => {
+            [newPage2] = await Promise.all([
+                page.waitForEvent('popup', { timeout: 20_000 }),
+                page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishPreviewButton).click({ timeout: 10_000 })
+            ]);
+        })
+
+        await test.step("Step 7: Copy the form link", async () => {
+            const formUrl = await formPage.copyFormLink();
+        })
+
+        await test.step("Step 7: Fill the form in new context", async () => {
+            const newUserContext = await browser.newContext();
+            const newUserPage = await newUserContext.newPage();
+
+            await newUserPage.goto(formUrl);
+            await newUserPage.getByRole('textbox').fill(FORM_TEXTS.defaultEmail);
+            await newUserPage.getByRole('button', { name: PUBLISHED_FORM_PAGE_SELECTORS.submitButtonName }).click({ timeout: 10_000 });
+
+            await newUserPage.close();
+            await newUserContext.close();
+        })
+        await test.step("Step 7: Turn off unique submissions", async () => {
+            await page.getByRole('link', { name: NAVBAR_SELECTORS.settingsLinkName }).click();
+            await page
+                .getByRole('link', { name: SETTINGS_PAGE_SELECTORS.uniqueSubmissionCardName })
+                .click();
+            await page.getByText(SETTINGS_PAGE_SELECTORS.noCheckOptionText).click();
+            await page.getByTestId(SETTINGS_PAGE_SELECTORS.saveChangesButton).click();
+        })
+        await test.step("Step 7: Fill the form again", async () => {
+            [newPage3] = await Promise.all([
+                page.waitForEvent('popup', { timeout: 60_000 }),
+                page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishPreviewButton).click({ timeout: 10_000 })
+            ]);
+
+            await newPage3.getByRole('textbox').fill(FORM_TEXTS.defaultEmail);
+            await newPage3.getByRole('button', { name: PUBLISHED_FORM_PAGE_SELECTORS.submitButtonName }).click({ timeout: 10_000 });
+        })
+    })
+
+    test("should be able to add conditional logic to the form", async ({ page }) => {
+        await test.step("Step 3: Add a single choice element with two options", async () => {
+            await page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.singleChoiceElementButtonName }).click();
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.questionContentField).fill(CREATE_FORM_TEXTS.standardSingleChoiceQuestionText);
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.singleChoiceOption1).click();
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.singleChoiceOption1).fill(CREATE_FORM_TEXTS.yesOptionText);
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.singleChoiceOption2).click();
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.singleChoiceOption2).fill(CREATE_FORM_TEXTS.noOptionText);
+
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.singleChoiceOption3).hover();
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.singleChoiceOption3).click();
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.singleChoiceOption3).hover();
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.singleChoiceOption3).click();
+
+            await page.getByRole('button', { name: NAVBAR_SELECTORS.summaryButtonName }).click();
+            await page
+                .getByRole('button', { name: CREATE_FORM_TEXTS.standardSingleChoiceQuestionText })
+                .dragTo(page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.emailAddressButtonName }));
+        })
+
+        await test.step("Step 4: Go to conditional logic in settings tab", async () => {
+            await page.getByRole('link', { name: NAVBAR_SELECTORS.settingsLinkName }).click();
+            await page.getByRole('link', { name: SETTINGS_PAGE_SELECTORS.conditionalLogicCardName }).click();
+        })
+
+        await test.step("Step 5: Add new condition", async () => {
+            await page.getByTestId(SETTINGS_PAGE_SELECTORS.addNewConditionButton).click();
+
+            const [conditionSelector, verbSelector, optionSelector, actionSelector, _] =
+                await page.getByTestId(SETTINGS_PAGE_SELECTORS.selectElementsForAddingCondition).all();
+
+            await conditionSelector.click();
+            await page.getByText(ADD_CONDITION_SELECTORS.selectConditionOptionText).click();
+
+            await verbSelector.click();
+            await page.getByText(ADD_CONDITION_SELECTORS.selectVerbOptionText, { exact: true }).click();
+
+            await optionSelector.click();
+            await page.getByText(ADD_CONDITION_SELECTORS.selectOptionOptionText, { exact: true }).click();
+
+            await actionSelector.click();
+            await page.locator(ADD_CONDITION_SELECTORS.selectActionOptionText).click();
+
+            await page.locator(ADD_CONDITION_SELECTORS.selectFieldLocator).click();
+            await page.getByText(ADD_CONDITION_SELECTORS.selectFieldOptionText, { exact: true }).click();
+
+            await page.locator(ADD_CONDITION_SELECTORS.saveChangesButtonLocator).click();
+        })
+
+        await test.step("Step 6: Publish the form", async () => {
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishButton).click();
+        })
+
+        await test.step("Step 7: Open the form and click No option and submit", async () => {
+            [newPage] = await Promise.all([
+                page.waitForEvent('popup', { timeout: 20_000 }),
+                page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishPreviewButton).click()
+            ]);
+    
+            await expect(newPage.getByText(PUBLISHED_FORM_PAGE_SELECTORS.emailAddressQuestionLabel)).toBeHidden();
+            await newPage.locator('label').filter({ hasText: CREATE_FORM_TEXTS.noOptionText }).click();
+            await newPage.getByRole('button', { name:   PUBLISHED_FORM_PAGE_SELECTORS.submitButtonName }).click();
+        })
+
+        await test.step("Step 8: Open the form and fill Yes", async () => {
+            [newPage2] = await Promise.all([
+                page.waitForEvent('popup', { timeout: 20_000 }),
+                page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishPreviewButton).click()
+            ]);
+            await expect(newPage2.getByText(PUBLISHED_FORM_PAGE_SELECTORS.emailAddressQuestionLabel)).toBeHidden();
+            await newPage2.locator('label').filter({ hasText: CREATE_FORM_TEXTS.yesOptionText }).click();
+            await expect(newPage2.getByText(PUBLISHED_FORM_PAGE_SELECTORS.emailAddressQuestionLabel)).toBeVisible();
+            await newPage2.getByRole('textbox').fill(FORM_TEXTS.defaultEmail);
+            await newPage2.getByRole('button', { name: PUBLISHED_FORM_PAGE_SELECTORS.submitButtonName }).click();
+        })
+
+        await test.step("Step 9: Disable the condition", async () => {
+            await page.getByRole('button', { name: ADD_CONDITION_SELECTORS.chooseConditionButtonName }).getByRole('button').click();
+            await page.getByRole('button', { name: ADD_CONDITION_SELECTORS.conditionDisableButtonName}).click();
+        })
+       
+        await test.step("Step 8: Fill the form again", async () => {
+            [newPage3] = await Promise.all([
+                page.waitForEvent('popup', { timeout: 20_000 }),
+                page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishPreviewButton).click()
+            ]);
+            await expect(newPage3.getByText(PUBLISHED_FORM_PAGE_SELECTORS.emailAddressQuestionLabel)).toBeVisible();
+            await newPage3.locator('label').filter({ hasText: CREATE_FORM_TEXTS.yesOptionText }).click();
+            await newPage3.locator('label').filter({ hasText: CREATE_FORM_TEXTS.noOptionText }).click();
+            await newPage3.getByRole('textbox').fill(FORM_TEXTS.defaultEmail);
+            await newPage3.getByRole('button', { name: PUBLISHED_FORM_PAGE_SELECTORS.submitButtonName }).click();
+        })
+    })
+
+
 });
 
 

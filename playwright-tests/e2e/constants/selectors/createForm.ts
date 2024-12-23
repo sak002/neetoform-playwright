@@ -10,6 +10,9 @@ export const NAVBAR_SELECTORS = {
     formRenameButton: 'form-rename-button',
     formRenameField: 'form-rename-text-field',
     homeButton: 'home-button',
+    settingsLinkName: 'Settings',
+    shareLinkName: 'Share',
+    summaryButtonName: 'Summary',
 }
 
 export const CREATE_FORM_PAGE_SELECTORS = {
@@ -25,6 +28,15 @@ export const CREATE_FORM_PAGE_SELECTORS = {
     addOptionLink: 'add-option-link',
     randomizeOptionButtonText: 'Randomize',
     hideOptionButtonText: 'Hide question',
+    starRatingButtonName: 'Star rating',
+    opinionScaleButtonName: 'Opinion scale',
+    matrixButtonName: 'Matrix',
+    questionPlaceHolder: 'Question',
+    singleChoiceOption1: 'option-input-0',
+    singleChoiceOption2: 'option-input-1',
+    singleChoiceOption3: 'option-input-2',
+    emailAddressButtonName: 'Email address',
+
     publishButton: 'publish-button',
     publishPreviewButton: 'publish-preview-button',
 }

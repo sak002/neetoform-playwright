@@ -1,3 +1,3 @@
-import { FORM_TEXTS } from "./form";
+import { FORM_TEXTS, CREATE_FORM_TEXTS } from "./form";
 
-export { FORM_TEXTS }
+export { FORM_TEXTS, CREATE_FORM_TEXTS }

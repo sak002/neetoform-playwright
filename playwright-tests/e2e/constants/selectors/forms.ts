@@ -9,6 +9,9 @@ export const PUBLISHED_FORM_PAGE_SELECTORS = {
     firstNameField: 'first-name-text-field',
     lastNameField: 'last-name-text-field',
     singleChoiceOptions: "form-single-choice-option",
+    passwordField: 'password-text-field',
+    submitPasswordButton: 'continue-button',
+    emailTextBox: 'textbox',
 
 }
 

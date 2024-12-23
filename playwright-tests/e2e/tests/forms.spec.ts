@@ -1,5 +1,7 @@
-import { test, expect, Page } from '@playwright/test';
+import { expect, Page, BrowserContext } from '@playwright/test';
+import pdfParse from 'pdf-parse';
 import { faker } from "@faker-js/faker";
+import { test } from '../fixtures';
 import {
     LOGIN_SELECTORS,
     NAVBAR_SELECTORS,
@@ -7,12 +9,15 @@ import {
     PUBLISHED_FORM_PAGE_SELECTORS,
     THANK_YOU_PAGE_SELECTORS,
     SUBMISSIONS_PAGE_SELECTORS,
-    FORM_TABLE_SELECTORS
+    FORM_TABLE_SELECTORS,
+    SETTINGS_PAGE_SELECTORS,
+    SHARE_PAGE_SELECTORS,
+    ADD_CONDITION_SELECTORS,
 } from '../constants/selectors';
-import { FORM_TEXTS } from '../constants/texts';
+import { FORM_TEXTS, CREATE_FORM_TEXTS } from '../constants/texts';
 
 test.describe("Forms page", () => {
-    let newPage: Page, newPage2: Page, newPage3: Page, formName: string;
+    let newPage: Page, newPage2: Page, newPage3: Page, formName: string, formUrl: string;
     test.beforeEach(async ({ page }) => {
         await test.step("Step 1: Login to neetoform", async () => {
             await page.goto("/");
@@ -97,7 +102,7 @@ test.describe("Forms page", () => {
     });
 
     test("should be able to customize form's field elements", async ({ page }) => {
-        test.setTimeout(200_000);
+        // test.setTimeout(200_000);
 
         const optionString = "Option 5, Option 6, Option 7, Option 8, Option 9, Option 10,";
         await test.step("Step 3: Add single and multiple choice elements", async () => {
@@ -108,7 +113,7 @@ test.describe("Forms page", () => {
 
         await test.step("Step 4: Add six more options to single choice element and randomize it", async () => {
             await page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.questionElementButtonName }).nth(1).click({ timeout: 10_000 });
-            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.questionContentField).fill(FORM_TEXTS.singleChoiceQuestionText);
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.questionContentField).fill(CREATE_FORM_TEXTS.singleChoiceQuestionText);
             await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.addBulkOptionLink).click({ timeout: 10_000 });
             await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.addBulkOptionField).fill(optionString, { timeout: 15_000 });
             await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.addBulkOptionDoneButton).click({ timeout: 20_000 });
@@ -117,7 +122,7 @@ test.describe("Forms page", () => {
 
         await test.step("Step 4: Add six more options to multiple choice element and hide it", async () => {
             await page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.questionElementButtonName }).nth(2).click({ timeout: 10_000 });
-            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.questionContentField).fill(FORM_TEXTS.multipleChoiceQuestionText);
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.questionContentField).fill(CREATE_FORM_TEXTS.multipleChoiceQuestionText);
             await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.addOptionLink).click();
             await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.addOptionLink).click();
             await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.addOptionLink).click();
@@ -141,7 +146,7 @@ test.describe("Forms page", () => {
         await newPage.reload();
 
         await test.step("Step 7: Ensure options in single choice element are randomized", async () => {
-            const optionArray = FORM_TEXTS.optionArray;
+            const optionArray = CREATE_FORM_TEXTS.optionArray;
             const options = newPage.getByTestId(PUBLISHED_FORM_PAGE_SELECTORS.singleChoiceOptions);
             await expect(options).not.toHaveText(optionArray);
             const optionTexts = await options.allInnerTexts();
@@ -151,7 +156,7 @@ test.describe("Forms page", () => {
         })
 
         await test.step("Step 8: Verify the multi choice element is hidden", async () => {
-            await expect(newPage.getByText(FORM_TEXTS.multipleChoiceQuestionText)).toBeHidden();
+            await expect(newPage.getByText(CREATE_FORM_TEXTS.multipleChoiceQuestionText)).toBeHidden();
         })
 
         await test.step("Step 8: Uncheck the hide option of multichoice element and publish the form", async () => {
@@ -163,7 +168,7 @@ test.describe("Forms page", () => {
                 page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishPreviewButton).click()
             ]);
 
-            await expect(newPage2.getByText(FORM_TEXTS.multipleChoiceQuestionText)).toBeVisible();
+            await expect(newPage2.getByText(CREATE_FORM_TEXTS.multipleChoiceQuestionText)).toBeVisible();
         })
     })
 
@@ -232,4 +237,56 @@ test.describe("Forms page", () => {
             await expect(page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.completionRateSection).getByTestId(SUBMISSIONS_PAGE_SELECTORS.insightsCount)).toHaveText("100%");
         })
     })
+
+    test("should be able to access control the form", async ({ page, context, browser }) => {
+        let newUserContext: BrowserContext, newUserPage: Page;
+        await test.step("Step 3: Publish the form", async () => {
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishButton).click();
+        })
+
+        await test.step("Step 4: Go to access control card", async () => {
+            await page.getByRole('link', { name: NAVBAR_SELECTORS.settingsLinkName }).click();
+            await page.getByRole('link', { name: SETTINGS_PAGE_SELECTORS.accessControlCardName }).click();
+        })
+
+        await test.step("Step 5: Secure access with password", async () => {
+            await page.getByText(SETTINGS_PAGE_SELECTORS.secureByPasswordOptionText).click();
+            await page.getByPlaceholder(SETTINGS_PAGE_SELECTORS.passwordFieldPlaceholder).fill(CREATE_FORM_TEXTS.defaultFormPassword);
+            await page.getByTestId(SETTINGS_PAGE_SELECTORS.saveChangesButton).click();
+        })
+
+        await test.step("Step 6: Copy form link to clipboard and read it", async () => {
+            await page.getByRole('link', { name: NAVBAR_SELECTORS.shareLinkName }).click();
+
+            await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+            await page.getByTestId(SHARE_PAGE_SELECTORS.copyFormLinkButton).click();
+            formUrl = await page.evaluate(() => navigator.clipboard.readText());
+            console.log(formUrl);
+        })
+
+        await test.step("Step 7: Open form in a new page and access using password", async () => {
+            newUserContext = await browser.newContext();
+            newUserPage = await newUserContext.newPage();
+
+            await newUserPage.goto(formUrl);
+            await newUserPage.getByTestId(PUBLISHED_FORM_PAGE_SELECTORS.passwordField).fill('password123');
+            await newUserPage.getByTestId(PUBLISHED_FORM_PAGE_SELECTORS.submitPasswordButton).click();
+        })
+
+        await test.step("Step 8: Fill in the form and verify submission", async () => {
+            await newUserPage.getByRole('textbox').fill(FORM_TEXTS.defaultEmail);
+            await newUserPage.getByRole('button', { name: PUBLISHED_FORM_PAGE_SELECTORS.submitButtonName }).click({ timeout: 10_000 });
+            await page.getByRole('link', { name: NAVBAR_SELECTORS.submissionLinkName }).click();
+            await expect(page.getByRole('cell', { name: FORM_TEXTS.defaultEmail })).toBeVisible();
+        })
+
+        await test.step("Step 9: Close page and context", async () => {
+            await newUserPage.close();
+            await newUserContext.close();
+        })
+    })
+
+   
 });
+
+

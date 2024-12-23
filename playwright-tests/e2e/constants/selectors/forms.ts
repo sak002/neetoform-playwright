@@ -13,6 +13,10 @@ export const PUBLISHED_FORM_PAGE_SELECTORS = {
     submitPasswordButton: 'continue-button',
     emailTextBox: 'textbox',
     emailAddressQuestionLabel: 'Question 1Email address*',
+    starRatingLocator: 'path',
+    defaultRating: '8',
+    matrixRow1Name: 'Row 1',
+    matrixRow2Name: 'Row 2',
     
 
 }

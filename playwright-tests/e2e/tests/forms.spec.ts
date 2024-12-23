@@ -407,10 +407,10 @@ test.describe("Forms page", () => {
                 page.waitForEvent('popup', { timeout: 20_000 }),
                 page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishPreviewButton).click()
             ]);
-    
+
             await expect(newPage.getByText(PUBLISHED_FORM_PAGE_SELECTORS.emailAddressQuestionLabel)).toBeHidden();
             await newPage.locator('label').filter({ hasText: CREATE_FORM_TEXTS.noOptionText }).click();
-            await newPage.getByRole('button', { name:   PUBLISHED_FORM_PAGE_SELECTORS.submitButtonName }).click();
+            await newPage.getByRole('button', { name: PUBLISHED_FORM_PAGE_SELECTORS.submitButtonName }).click();
         })
 
         await test.step("Step 8: Open the form and fill Yes", async () => {
@@ -427,9 +427,9 @@ test.describe("Forms page", () => {
 
         await test.step("Step 9: Disable the condition", async () => {
             await page.getByRole('button', { name: ADD_CONDITION_SELECTORS.chooseConditionButtonName }).getByRole('button').click();
-            await page.getByRole('button', { name: ADD_CONDITION_SELECTORS.conditionDisableButtonName}).click();
+            await page.getByRole('button', { name: ADD_CONDITION_SELECTORS.conditionDisableButtonName }).click();
         })
-       
+
         await test.step("Step 8: Fill the form again", async () => {
             [newPage3] = await Promise.all([
                 page.waitForEvent('popup', { timeout: 20_000 }),
@@ -442,6 +442,73 @@ test.describe("Forms page", () => {
             await newPage3.getByRole('button', { name: PUBLISHED_FORM_PAGE_SELECTORS.submitButtonName }).click();
         })
     })
+
+    test("should be able to download submissions and verify them", async ({ page, formPage }) => {
+        await test.step("Step 3: Add a star rating, opinion scale and matrix fields to the form", async () => {
+            await formPage.addStarRatingOpinionAndMatrixField();
+        })
+
+        await test.step("Step 5: Publish the form and make a submission", async () => {
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishButton).click();
+
+            [newPage] = await Promise.all([
+                page.waitForEvent('popup', { timeout: 20_000 }),
+                page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishPreviewButton).click()
+            ]);
+
+            await newPage.getByRole('textbox').fill(FORM_TEXTS.defaultEmail);
+            await newPage.locator(PUBLISHED_FORM_PAGE_SELECTORS.starRatingLocator).nth(3).click();
+            await newPage.getByText(PUBLISHED_FORM_PAGE_SELECTORS.defaultRating).click();
+            await newPage.getByRole('row', { name: PUBLISHED_FORM_PAGE_SELECTORS.matrixRow1Name }).locator('span').first().click();
+            await newPage.getByRole('row', { name: PUBLISHED_FORM_PAGE_SELECTORS.matrixRow2Name }).locator('span').nth(1).click();
+            await newPage.getByRole('button', { name: PUBLISHED_FORM_PAGE_SELECTORS.submitButtonName }).click();
+        })
+
+        await test.step("Step 6: Navigate to the submissions tab", async () => {
+            await page.getByRole('link', { name: NAVBAR_SELECTORS.submissionLinkName }).click();
+            await page.reload();
+        })
+
+        await test.step("Step 7: Click on View button", async () => {
+            await page.getByRole('cell', { name: FORM_TEXTS.defaultEmail }).hover();
+            await page.getByRole('button', { name: SUBMISSIONS_PAGE_SELECTORS.viewButtonName }).click();
+        })
+
+        await test.step("Step 8: Choose download option pdf", async () => {
+            await page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.chooseDownloadOptionButton).nth(7).click();
+            await page.locator('div').filter({ hasText: SUBMISSIONS_PAGE_SELECTORS.pdfOptionButton }).click();
+        })
+
+        let pdfBuffer: Buffer | null = null;
+        await test.step("Step 9: Open the pdf submission and verify it", async () => {
+            const [newPage2] = await Promise.all([
+                page.waitForEvent("popup"),
+                page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.downloadButton).click(),
+            ]);
+
+            await newPage2.waitForLoadState("domcontentloaded");
+
+            const pdfUrl = newPage2.url();
+
+            const response = await page.request.get(pdfUrl);
+            pdfBuffer = Buffer.from(await response.body());
+            expect(pdfBuffer).not.toBeNull();
+
+            if (pdfBuffer) {
+                const pdfData = await pdfParse(pdfBuffer);
+                const submittedData = pdfData.text.split('\n').slice(3);
+                const submittedDataArray = submittedData.map(data => {
+                    data = data.trim();
+                    data = data.includes("1:") ? data.replace("1:", "1 :") :
+                        (data.includes("2:") ? data.replace("2:", "2 :") : data);
+                    return data;
+                });
+                await expect(page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.submissionPainView)).toHaveText(submittedDataArray.join(""));
+            }
+        })
+        await page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.closeSubmissionViewButton).click();
+    })
+
 
 
 });

@@ -6,6 +6,17 @@ export const FORM_TEXTS = {
     defaultLastName: "Smith",
     defaultPhoneNumber: "9087654321",
     defaultCountryCode: "+1",
+    urlParameters: {
+        email: "sample@example.com",
+        customer_service: 4,
+        scale: 7,
+        customer_rep: {
+            Friendliness: "Excellent",
+            Quickness: "Very Good",
+            Knowledge: "Average"
+        },
+        languages: "Ruby,Python",
+    },
 }
 
 export const CREATE_FORM_TEXTS = {
@@ -19,4 +30,17 @@ export const CREATE_FORM_TEXTS = {
     standardSingleChoiceQuestionText: "Interested in Playwright?",
     yesOptionText: "Yes",
     noOptionText: "No",
+    starRatingQuestionNameText: "Rate customer service",
+    opinionScaleQuestionNameText: "Opinion scale",
+    matrixQuestionNameText: "Rate Customer Representative",
+    starRatingFieldCodeText: "customer_service",
+    opinionScaleFieldCodeText: "scale",
+    matrixRowTexts: ["Friendliness", "Knowledge", "Quickness"],
+    matrixColumnTexts: ["Excellent", "Very Good", "Average"],
+    matrixFieldCodeText: "customer_rep",
+    multiChoiceQuestionText: "Preferred Language",
+    multiChoiceOptionTexts: ["Ruby", "Python", "Javascript", "C"],
+    multiChoiceFieldCodeText: "languages",
+    themeNameAddString: " theme",
+    imageUrl: '/home/samiksha/neetoform-playwright-tests/playwright-tests/e2e/constants/images/my-theme.png',
 }

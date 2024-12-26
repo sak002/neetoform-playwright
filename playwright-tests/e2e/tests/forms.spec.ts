@@ -1,4 +1,4 @@
-import { expect, Page, BrowserContext } from '@playwright/test';
+import { expect, Page, BrowserContext, Locator } from '@playwright/test';
 import pdfParse from 'pdf-parse';
 import { faker } from "@faker-js/faker";
 import { test } from '../fixtures';
@@ -13,11 +13,12 @@ import {
     SETTINGS_PAGE_SELECTORS,
     SHARE_PAGE_SELECTORS,
     ADD_CONDITION_SELECTORS,
+    THEME_PAGE_SELECTORS,
 } from '../constants/selectors';
 import { FORM_TEXTS, CREATE_FORM_TEXTS } from '../constants/texts';
 
 test.describe("Forms page", () => {
-    let newPage: Page, newPage2: Page, newPage3: Page, formName: string, formUrl: string;
+    let formName: string;
     test.beforeEach(async ({ page }) => {
         await test.step("Step 1: Login to neetoform", async () => {
             await page.goto("/");
@@ -28,7 +29,6 @@ test.describe("Forms page", () => {
             await page.getByRole('button', { name: NAVBAR_SELECTORS.addFormButtonName }).click({ timeout: 20_000 });
             await page.getByText(NAVBAR_SELECTORS.startFromScratchLink).click();
         })
-
 
         formName = faker.word.words({ count: 2 });
         await page.getByTestId('form-title').click();
@@ -44,6 +44,7 @@ test.describe("Forms page", () => {
     })
 
     test("should be able to add a new form, submit it and verify submission", async ({ page }) => {
+        let newPage: Page;
         await test.step("Step 3: Add form elements", async () => {
             await page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.fullNameButtonName }).click();
             await page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.phoneNumberButtonName }).click();
@@ -103,8 +104,7 @@ test.describe("Forms page", () => {
     });
 
     test("should be able to customize form's field elements", async ({ page }) => {
-        // test.setTimeout(200_000);
-
+        let newPage: Page, newPage2: Page;
         const optionString = "Option 5, Option 6, Option 7, Option 8, Option 9, Option 10,";
         await test.step("Step 3: Add single and multiple choice elements", async () => {
             await page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.singleChoiceElementButtonName }).click();
@@ -117,7 +117,8 @@ test.describe("Forms page", () => {
             await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.questionContentField).fill(CREATE_FORM_TEXTS.singleChoiceQuestionText);
             await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.addBulkOptionLink).click({ timeout: 10_000 });
             await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.addBulkOptionField).fill(optionString, { timeout: 15_000 });
-            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.addBulkOptionDoneButton).click({ timeout: 20_000 });
+            await expect(page.getByTestId(CREATE_FORM_PAGE_SELECTORS.addBulkOptionDoneButton)).toBeVisible({ timeout: 20_000 });
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.addBulkOptionDoneButton).click();
             await page.getByText(CREATE_FORM_PAGE_SELECTORS.randomizeOptionButtonText).click();
         })
 
@@ -142,9 +143,8 @@ test.describe("Forms page", () => {
                 page.waitForEvent('popup', { timeout: 20_000 }),
                 page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishPreviewButton).click({ timeout: 20_000 })
             ]);
+            await newPage.reload();
         })
-
-        await newPage.reload();
 
         await test.step("Step 7: Ensure options in single choice element are randomized", async () => {
             const optionArray = CREATE_FORM_TEXTS.optionArray;
@@ -174,6 +174,7 @@ test.describe("Forms page", () => {
     })
 
     test("should be able to verify form insights", async ({ page }) => {
+        let newPage: Page, newPage2: Page, newPage3: Page;
         await test.step("Step 3: Publish the form", async () => {
             await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishButton).click();
         })
@@ -239,8 +240,8 @@ test.describe("Forms page", () => {
         })
     })
 
-    test("should be able to access control the form", async ({ page, context, browser, formPage }) => {
-        let newUserContext: BrowserContext, newUserPage: Page;
+    test("should be able to access control the form", async ({ page, browser, formPage }) => {
+        let newUserContext: BrowserContext, newUserPage: Page, formUrl: string;
         await test.step("Step 3: Publish the form", async () => {
             await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishButton).click();
         })
@@ -283,6 +284,7 @@ test.describe("Forms page", () => {
     })
 
     test("should be able to make unique submissions", async ({ page, context, browser, formPage }) => {
+        let formUrl: string, newPage: Page, newPage2: Page;
         await test.step("Step 3: Publish the form", async () => {
             await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishButton).click();
         })
@@ -299,27 +301,23 @@ test.describe("Forms page", () => {
             await page.getByTestId(SETTINGS_PAGE_SELECTORS.saveChangesButton).click();
         });
 
-        await test.step("Step 8: Open the form and submit it", async () => {
+        await test.step("Step 6: Open the form and submit it", async () => {
             [newPage] = await Promise.all([
-                page.waitForEvent('popup', { timeout: 60_000 }),
+                page.waitForEvent('popup', { timeout: 20_000 }),
                 page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishPreviewButton).click({ timeout: 10_000 })
             ]);
             await newPage.getByRole('textbox').fill(FORM_TEXTS.defaultEmail);
             await newPage.getByRole('button', { name: PUBLISHED_FORM_PAGE_SELECTORS.submitButtonName }).click({ timeout: 10_000 });
         })
 
-        await test.step("Step 6: Open the form again", async () => {
-            [newPage2] = await Promise.all([
-                page.waitForEvent('popup', { timeout: 20_000 }),
-                page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishPreviewButton).click({ timeout: 10_000 })
-            ]);
+        await test.step("Step 7: Try resubmitting the form ", async () => {
+            formUrl = await formPage.copyFormLink();
+            const newFormPage = await context.newPage();
+            await newFormPage.goto(formUrl);
+            await expect(newFormPage.getByRole('heading', { name: 'You cannot submit this form' })).toBeVisible();
         })
 
-        await test.step("Step 7: Copy the form link", async () => {
-            const formUrl = await formPage.copyFormLink();
-        })
-
-        await test.step("Step 7: Fill the form in new context", async () => {
+        await test.step("Step 8: Fill the form in new context", async () => {
             const newUserContext = await browser.newContext();
             const newUserPage = await newUserContext.newPage();
 
@@ -330,7 +328,7 @@ test.describe("Forms page", () => {
             await newUserPage.close();
             await newUserContext.close();
         })
-        await test.step("Step 7: Turn off unique submissions", async () => {
+        await test.step("Step 9: Turn off unique submissions", async () => {
             await page.getByRole('link', { name: NAVBAR_SELECTORS.settingsLinkName }).click();
             await page
                 .getByRole('link', { name: SETTINGS_PAGE_SELECTORS.uniqueSubmissionCardName })
@@ -338,18 +336,19 @@ test.describe("Forms page", () => {
             await page.getByText(SETTINGS_PAGE_SELECTORS.noCheckOptionText).click();
             await page.getByTestId(SETTINGS_PAGE_SELECTORS.saveChangesButton).click();
         })
-        await test.step("Step 7: Fill the form again", async () => {
-            [newPage3] = await Promise.all([
+        await test.step("Step 10: Fill the form again", async () => {
+            [newPage2] = await Promise.all([
                 page.waitForEvent('popup', { timeout: 60_000 }),
                 page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishPreviewButton).click({ timeout: 10_000 })
             ]);
 
-            await newPage3.getByRole('textbox').fill(FORM_TEXTS.defaultEmail);
-            await newPage3.getByRole('button', { name: PUBLISHED_FORM_PAGE_SELECTORS.submitButtonName }).click({ timeout: 10_000 });
+            await newPage2.getByRole('textbox').fill(FORM_TEXTS.defaultEmail);
+            await newPage2.getByRole('button', { name: PUBLISHED_FORM_PAGE_SELECTORS.submitButtonName }).click({ timeout: 10_000 });
         })
     })
 
     test("should be able to add conditional logic to the form", async ({ page }) => {
+        let newPage: Page, newPage2: Page, newPage3: Page;
         await test.step("Step 3: Add a single choice element with two options", async () => {
             await page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.singleChoiceElementButtonName }).click();
             await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.questionContentField).fill(CREATE_FORM_TEXTS.standardSingleChoiceQuestionText);
@@ -444,8 +443,9 @@ test.describe("Forms page", () => {
     })
 
     test("should be able to download submissions and verify them", async ({ page, formPage }) => {
+        let newPage: Page;
         await test.step("Step 3: Add a star rating, opinion scale and matrix fields to the form", async () => {
-            await formPage.addStarRatingOpinionAndMatrixField();
+            await formPage.addStarRatingOpinionAndMatrixField(CREATE_FORM_TEXTS.defaultStarRatingQuestion, CREATE_FORM_TEXTS.defaultOpinionScaleQuestion, CREATE_FORM_TEXTS.defaultMatrixQuestion);
         })
 
         await test.step("Step 5: Publish the form and make a submission", async () => {
@@ -509,8 +509,140 @@ test.describe("Forms page", () => {
         await page.getByTestId(SUBMISSIONS_PAGE_SELECTORS.closeSubmissionViewButton).click();
     })
 
+    test("should be able to pre-fill form using URL parameters", async ({ page, formPage, context }) => {
+        let formUrl: string, newFormPage: Page;
+        function encodeUrlParameters(params: Record<string, string | number | Record<string, string | number>>): string {
+            const searchParams = [];
+
+            for (const [key, value] of Object.entries(params)) {
+                if (typeof value === "object" && value !== null) {
+                    for (const [nestedKey, nestedValue] of Object.entries(value)) {
+                        searchParams.push([`${key}.${nestedKey}`, String(nestedValue)]);
+                    }
+                } else {
+                    searchParams.push([key, String(value)]);
+                }
+            }
+
+            return new URLSearchParams(searchParams).toString();
+        }
+
+        await test.step("Step 3: Add a star rating, opinion scale, multiple choice and matrix fields to the form", async () => {
+            await formPage.addStarRatingOpinionAndMatrixField(
+                CREATE_FORM_TEXTS.starRatingQuestionNameText,
+                CREATE_FORM_TEXTS.opinionScaleQuestionNameText,
+                CREATE_FORM_TEXTS.matrixQuestionNameText
+            );
+
+            await page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.multipleChoiceElementButtonName }).click();
+            await expect(page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.questionElementButtonName }).nth(4))
+                .toBeVisible({ timeout: 10_000 });
+        })
+
+        await test.step("Step 4: Rename the star rating element", async () => {
+            await page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.questionElementButtonName }).nth(1).click();
+
+            const q1AdvProperty = page
+                .getByTestId(CREATE_FORM_PAGE_SELECTORS.propertyPanel)
+                .getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.advancedPropertiesButtonName });
+            await q1AdvProperty.click({ timeout: 20_000 });
+
+            await expect(q1AdvProperty).toHaveAttribute(
+                CREATE_FORM_PAGE_SELECTORS.advancedPropertiesAttribute, 
+                CREATE_FORM_PAGE_SELECTORS.advancedPropertiesAttributeValue
+            );
+
+            await page.getByPlaceholder(CREATE_FORM_PAGE_SELECTORS.fieldCodeProperty).fill(CREATE_FORM_TEXTS.starRatingFieldCodeText);
+        })
+
+        await test.step("Step 5: Rename the opinion scale element", async () => {
+            await page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.questionElementButtonName }).nth(2).click();
+
+            const q2AdvProperty = page
+                .getByTestId(CREATE_FORM_PAGE_SELECTORS.propertyPanel)
+                .getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.advancedPropertiesButtonName });
+            await q2AdvProperty.click();
+            await page.getByPlaceholder(CREATE_FORM_PAGE_SELECTORS.fieldCodeProperty).fill(CREATE_FORM_TEXTS.opinionScaleFieldCodeText);
+        })
+
+        await test.step("Step 6: Rename the matrix element", async () => {
+            await page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.questionElementButtonName }).nth(3).click();
+
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.singleChoiceOption1).click({ timeout: 10_000 });
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.singleChoiceOption1).fill(CREATE_FORM_TEXTS.matrixRowTexts[0]);
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.singleChoiceOption2).click();
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.singleChoiceOption2).fill(CREATE_FORM_TEXTS.matrixRowTexts[1]);
+            await page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.addRowButtonName }).click();
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.singleChoiceOption3).fill(CREATE_FORM_TEXTS.matrixRowTexts[2]);
+
+            await page.getByPlaceholder(CREATE_FORM_PAGE_SELECTORS.matrixColumn1).click();
+            await page.getByPlaceholder(CREATE_FORM_PAGE_SELECTORS.matrixColumn1).fill(CREATE_FORM_TEXTS.matrixColumnTexts[0]);
+            await page.getByPlaceholder(CREATE_FORM_PAGE_SELECTORS.matrixColumn2).click();
+            await page.getByPlaceholder(CREATE_FORM_PAGE_SELECTORS.matrixColumn2).fill(CREATE_FORM_TEXTS.matrixColumnTexts[1]);
+            await page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.addColumnButtonName }).click();
+            await page.getByPlaceholder(CREATE_FORM_PAGE_SELECTORS.matrixColumn3).fill(CREATE_FORM_TEXTS.matrixColumnTexts[2]);
+
+            const q3AdvProperty = page
+                .getByTestId(CREATE_FORM_PAGE_SELECTORS.propertyPanel)
+                .getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.advancedPropertiesButtonName });
+            await q3AdvProperty.scrollIntoViewIfNeeded({ timeout: 20_000 });
+            await q3AdvProperty.click({ timeout: 30_000 });
+            await expect(q3AdvProperty).toHaveAttribute(
+                CREATE_FORM_PAGE_SELECTORS.advancedPropertiesAttribute, 
+                CREATE_FORM_PAGE_SELECTORS.advancedPropertiesAttributeValue
+            );
+            await page.getByPlaceholder(CREATE_FORM_PAGE_SELECTORS.fieldCodeProperty).scrollIntoViewIfNeeded();
+            await page.getByPlaceholder(CREATE_FORM_PAGE_SELECTORS.fieldCodeProperty)
+                .fill(CREATE_FORM_TEXTS.matrixFieldCodeText, { timeout: 10_000 });
+        })
+
+        await test.step("Step 7: Rename the multi choice element", async () => {
+            await page.getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.questionElementButtonName}).nth(4).click();
+            await page.getByPlaceholder(CREATE_FORM_PAGE_SELECTORS.questionPlaceHolder).fill(CREATE_FORM_TEXTS.multiChoiceQuestionText);
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.multiChoiceOptions[0]).fill(CREATE_FORM_TEXTS.multiChoiceOptionTexts[0], { timeout: 10_000 });
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.multiChoiceOptions[1]).fill(CREATE_FORM_TEXTS.multiChoiceOptionTexts[1]);
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.multiChoiceOptions[2]).fill(CREATE_FORM_TEXTS.multiChoiceOptionTexts[2]);
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.multiChoiceOptions[3]).fill(CREATE_FORM_TEXTS.multiChoiceOptionTexts[3]);
+
+            const q4AdvProperty = page
+                .getByTestId(CREATE_FORM_PAGE_SELECTORS.propertyPanel)
+                .getByRole('button', { name: CREATE_FORM_PAGE_SELECTORS.advancedPropertiesButtonName });
+            await q4AdvProperty.scrollIntoViewIfNeeded();
+            await q4AdvProperty.click();
+            await page.getByPlaceholder(CREATE_FORM_PAGE_SELECTORS.fieldCodeProperty).fill(CREATE_FORM_TEXTS.multiChoiceFieldCodeText);
+        })
 
 
+        await test.step("Step 8: Publish the form", async () => {
+            await page.getByTestId(CREATE_FORM_PAGE_SELECTORS.publishButton).click();
+
+            formUrl = await formPage.copyFormLink();
+        })
+
+        await test.step("Step 9: Encode the url with parameters", async () => {
+            const urlParameters: Record<string, string | number | Record<string, string>> = FORM_TEXTS.urlParameters;
+
+            const encodedParams = encodeUrlParameters(urlParameters);
+            const prefilledFormURL = `${formUrl}?${encodedParams}`.replace("%2B", "%20");
+            console.log(prefilledFormURL);
+
+            newFormPage = await context.newPage();
+            await newFormPage.goto(prefilledFormURL);
+        })
+
+        await test.step("Step 10: Verify that the form is prefilled", async () => {
+            await expect(newFormPage.getByTestId(PUBLISHED_FORM_PAGE_SELECTORS.emailField)).toHaveValue(FORM_TEXTS.urlParameters.email);
+            await expect(newFormPage.getByTestId(PUBLISHED_FORM_PAGE_SELECTORS.starIcons).nth(3).locator('svg'))
+                .toHaveClass(PUBLISHED_FORM_PAGE_SELECTORS.starIconClassActive);
+
+            await expect(newFormPage.getByText('7')).toBeChecked();
+
+            await expect(newFormPage.getByRole('row', { name: CREATE_FORM_TEXTS.matrixRowTexts[0] }).locator('span').first()).toBeChecked();
+            await expect(newFormPage.getByRole('row', { name: CREATE_FORM_TEXTS.matrixRowTexts[1] }).locator('span').nth(1)).toBeChecked();
+            await expect(newFormPage.getByRole('row', { name: CREATE_FORM_TEXTS.matrixRowTexts[2] }).locator('span').nth(2)).toBeChecked();
+
+            await expect(newFormPage.locator('label').filter({ hasText: CREATE_FORM_TEXTS.multiChoiceOptionTexts[0] }).locator('span').first()).toBeChecked();
+            await expect(newFormPage.locator('label').filter({ hasText: CREATE_FORM_TEXTS.multiChoiceOptionTexts[2]  }).locator('span').first()).toBeChecked();
+        })
+    })
 });
-
-

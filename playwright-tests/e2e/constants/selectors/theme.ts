@@ -1,0 +1,15 @@
+export const THEME_PAGE_SELECTORS = {
+    addThemeButton: 'customize-themes-add-theme-button',
+    themeNameField: 'theme-name-property',
+    addBackgroundImageButton: 'Background image',
+    openImageLibraryButton: 'open-asset-library-button',
+    fileInputElement: 'neeto-image-uploader-file-input',
+    selectOriginalImageButton: 'select-original-image-switch',
+    imageUploadingDoneButton: 'Done',
+    saveChangesButton: 'save-changes-button',
+    goBackButton: 'customize-themes-back-button',
+    themeCards: 'theme-card',
+    useThemeButtonName: 'Use theme',
+    activeThemeCard: 'active-theme-card',
+    themeName: 'theme-name',
+}

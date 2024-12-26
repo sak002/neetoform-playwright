@@ -17,7 +17,8 @@ export const PUBLISHED_FORM_PAGE_SELECTORS = {
     defaultRating: '8',
     matrixRow1Name: 'Row 1',
     matrixRow2Name: 'Row 2',
-    
+    starIcons: 'preview-rating-icon',
+    starIconClassActive: 'neeto-form-rating__icon neeto-form-rating__icon--active',
 
 }
 

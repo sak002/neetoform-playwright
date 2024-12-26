@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-export const STORAGE_STATE = "./auth/session.json";
+// export const STORAGE_STATE = "./auth/session.json";
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
@@ -38,22 +38,22 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
-    {
-      name: "login",
-      use: { ...devices["Desktop Chrome"] },
-      testMatch: "**/login.setup.ts", // Notice the updated spec name
-    },
-    {
-      name: "Logged In tests",
-      use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
-      dependencies: ["login"],
-      testMatch: "**/*.spec.ts",
-    },
-
     // {
-    //   name: 'chromium',
-    //   use: { ...devices['Desktop Chrome'] },
+    //   name: "login",
+    //   use: { ...devices["Desktop Chrome"] },
+    //   testMatch: "**/login.setup.ts", // Notice the updated spec name
     // },
+    // {
+    //   name: "Logged In tests",
+    //   use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
+    //   dependencies: ["login"],
+    //   testMatch: "**/*.spec.ts",
+    // },
+
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
 
     // {
     //   name: 'firefox',
